@@ -1,0 +1,265 @@
+ALERTA
+
+Estoy haciendo este dashboard en grafana quiero ahora hacer las alertas como lo hago dame un paso a paso y hagamoslo junto
+
+¡Claro que sí! Configurar alertas es el paso definitivo para que tu dashboard deje de ser solo una pantalla informativa y se convierta en un vigía que trabaje por ti las 24 horas.
+
+Analizando tu pantalla, veo que tienes la consulta "A" para el voltaje de la batería (Battery voltage) y la consulta "B" para las RPM del motor (Engine Speed). Además, noto que tienes trazadas unas líneas rojas punteadas que parecen ser tus umbrales críticos (alrededor de los 24V hacia abajo y 28V hacia arriba).
+
+Vamos a crear una alerta para que te avise si el voltaje cae por debajo de ese nivel crítico. Aquí tienes el paso a paso exacto para hacerlo juntos:
+
+Paso 1: Ingresar a la sección de Alertas
+En la pantalla que me muestras, justo en el medio, al lado de las pestañas Query y Transform, haz clic en la pestaña Alert.
+
+Haz clic en el botón azul que dice Create alert rule from this panel (Crear regla de alerta desde este panel). Esto te llevará a la interfaz de alertas unificadas de Grafana llevando contigo las consultas A y B.
+
+Paso 2: Definir la condición de la alerta
+Una vez en la nueva pantalla de alertas, verás tres bloques principales. En la sección 1. Set a query and alert condition, haremos lo siguiente:
+
+Verás que tus consultas A y B se importaron automáticamente. Como solo queremos alertar sobre el voltaje, nos enfocaremos en la A.
+
+Grafana agregará automáticamente una Expresión llamada Reduce (usualmente nombrada como C). Asegúrate de que esta expresión esté configurada como Function: Last e Input: A. Esto le dice a Grafana: "Toma el último valor de voltaje registrado".
+
+Grafana agregará otra Expresión llamada Math (usualmente nombrada como D). Aquí pondremos nuestra regla. Si queremos alertar cuando baje de 24V o suba de 28V, escribe la siguiente fórmula: $C < 24 || $C > 28.
+
+Haz clic en el botón Set as alert condition justo debajo de esa expresión matemática (D).
+
+Paso 3: Configurar la evaluación (Evitar falsos positivos)
+No queremos que te llegue un correo si el voltaje baja una fracción de segundo al dar arranque al motor. Hay que darle un margen de tiempo. Ve a la sección 2. Alert evaluation behavior:
+
+Evaluate every: Ponle 1m (Grafana revisará el voltaje cada minuto).
+
+For: Ponle 5m (El voltaje tiene que mantenerse en estado crítico por 5 minutos seguidos para que la alerta se dispare).
+
+Selecciona tu carpeta de alertas (puedes crear una llamada "Alertas Eléctricas").
+
+Paso 4: Ponerle nombre y mensaje
+Baja a la sección 3. Add details for your alert:
+
+Rule name: Ponle algo claro, como Voltaje Crítico - Baterías EX3600.
+
+Summary: Escribe el resumen del problema. Ejemplo: Voltaje fuera de rango en la excavadora.
+
+Description: Aquí puedes ser específico para que el técnico sepa qué hacer. Ejemplo: El voltaje del sistema eléctrico ha caído por debajo de 24V o superado los 28V por más de 5 minutos. Revisar estado del banco de baterías y alternador.
+
+Paso 5: Guardar y activar
+En la esquina superior derecha, haz clic en Save rule and exit (Guardar regla y salir).
+
+¡Y listo! Con esto, has creado tu primera alarma basada en tu gráfica. Grafana ahora está vigilando la línea azul, amarilla y morada de los voltajes en segundo plano.
+
+no encuentro Set as alert condition, sale es alert condition
+
+¡Tranquilo, lo estás haciendo perfecto! Lo que sucede es que Grafana actualiza ligeramente los textos de su interfaz dependiendo de la versión exacta que tengas instalada, pero la lógica es exactamente la misma.
+
+Si observas la imagen que me enviaste, debajo del bloque D (Math) tienes una etiqueta verde con un check que dice "✓ Alert condition".
+
+Esto significa que Grafana ya asignó automáticamente tu fórmula matemática como el gatillo de la alerta. ¡No tienes que hacer clic en nada más en ese paso! Ya está configurado exactamente como lo necesitamos.
+
+Para que veas cómo funciona el sistema: si te fijas en el bloque C (Reduce), verás un texto azul que dice "Make this the alert condition". Si hicieras clic ahí, el check verde se pasaría al bloque C, y Grafana ignoraría tu fórmula matemática, disparando la alarma por cualquier valor crudo (lo cual no queremos).
+
+Dado que el bloque D ya está marcado en verde como tu condición oficial, y veo en tu pantalla que ya configuraste impecablemente la sección 2 (Evaluate every 1m for 5m) y le pusiste de nombre BATERIAS-6, solo te faltan los pasos finales:
+
+En la sección 3, asegúrate de seleccionar un Folder (Carpeta) y un Group (Grupo) en los menús desplegables. Si no tienes uno, puedes escribir "Alertas EX3600" ahí mismo y presionar Enter para crearlo.
+
+Desplázate hasta arriba a la derecha y haz clic en el botón azul Save rule and exit.
+
+¡Tu alerta de baterías ya quedó oficialmente armada e implementada!
+
+una pregunta si apagan el equipo logicamente se iria a 24 el voltaje se envia la alarma?
+
+¡Excelente análisis! Tienes toda la razón en pensar en eso, es el clásico "falso positivo" con el que nos enfrentamos todos los días en el monitoreo de maquinaria pesada.
+
+Aquí te explico exactamente qué va a pasar y cómo Grafana lo interpreta según lo que configuramos:
+
+Escenario 1: Apagan el motor diésel, pero dejan la chapa (llave) en contacto
+Al apagarse el motor, el alternador deja de enviar los 27-28V de carga. El sistema eléctrico se apoyará netamente en las baterías, y el voltaje caerá a su estado de reposo (normalmente entre 24.5V y 25.5V en un banco sano).
+
+¿Se activa la alarma?: Como tu fórmula es estrictamente menor a 24 ($C < 24), si la batería está sana y se queda en 24.5V, no se enviará la alarma.
+
+La ventaja: Si las baterías ya están viejas o dejaron las luces encendidas con el motor apagado, el voltaje caerá a 23.5V. A los 5 minutos, sí te enviará la alarma, ¡lo cual es perfecto! Te permitirá avisar a operaciones por radio: "Apaguen las luces de la EX3600 o van a drenar las baterías y no va a arrancar".
+
+Escenario 2: Apagan el equipo por completo (Master Switch / Cortacorriente)
+Al cortar la energía total, el módulo telemétrico de la excavadora se apaga y Grafana deja de recibir datos (se forma un vacío en la gráfica).
+
+¿Se activa la alarma?: Depende de cómo Grafana maneje la "ausencia de datos". Por defecto, a veces Grafana interpreta el "No Data" como una falla y envía una alerta.
+
+Cómo evitar la alarma falsa por equipo apagado (Cortacorriente)
+Si miras detalladamente la última foto que me enviaste, justo debajo de la sección donde pusiste Evaluate every 1m for 5m, hay un pequeño menú desplegable que dice:
+> Configure no data and error handling
+
+Para que no te lleguen correos a las 3:00 AM solo porque apagaron la máquina para el cambio de turno, haz esto:
+
+Haz clic en > Configure no data and error handling para expandirlo.
+
+Busca la opción que dice Alert state if no data or all values are null (Estado de la alerta si no hay datos).
+
+Cambia el valor de Alerting a OK o Keep Last State (Mantener último estado).
+
+De esta manera, le estás diciendo a Grafana: "Si el voltaje baja de 24V, avísame. Pero si simplemente el equipo desaparece y deja de transmitir, ignóralo, es porque lo apagaron".
+
+no encuentro Alert state if no data or all values are null
+
+¡No te preocupes, es muy fácil perderse con tantas configuraciones en la pantalla! De hecho, mirando detenidamente la imagen que me acabas de compartir, la opción ya está visible y expandida.
+
+Vamos a ubicarla juntos en tu pantalla:
+
+Ve a la sección 2 Alert evaluation behavior.
+
+Justo debajo del texto Configure no data and error handling que ya expandiste, mira el primer título. Dice exactamente "Alert state if no data or all values are null".
+
+Observa el cuadro gris que está justo debajo de ese título; actualmente dice "No Data".
+
+Haz clic en ese cuadro que dice "No Data" y selecciona "OK" (o "Keep Last State", la que te aparezca disponible).
+
+Al seleccionar "OK", le estás enseñando a Grafana a ignorar los vacíos en la gráfica. Así sabrá que si no hay datos, es simplemente porque el máster de baterías de la EX3600 está apagado y no porque haya una falla real.
+
+Una vez que cambies ese valor, baja a la sección 3 donde ya tienes tu carpeta "Ex3600" y tu grupo "RLServer", y haz clic en guardar arriba a la derecha. ¡Tu alerta quedará lista como un profesional!
+
+y esta punto 4.
+
+¡Has llegado al último paso! Este Punto 4 (Notifications) es clave porque es donde decides a quién y por dónde va a llegar el aviso cuando el voltaje de la batería caiga. Grafana te está mostrando un diagrama de flujo de cómo viaja la alerta hasta llegar al teléfono o correo de alguien.
+
+Aquí te explico exactamente qué significa y qué debes hacer:
+
+El Sistema de Etiquetas (Labels) y Rutas
+Grafana no envía alertas a lo loco; usa un sistema de "etiquetas" (Labels) para saber a qué equipo despachar el problema.
+
+Root route (Ruta por defecto): Si lees el recuadro gris abajo, dice que si no pones ninguna etiqueta, la alerta se irá por la ruta "por defecto" (Root route). Es decir, le llegará a todos los que estén configurados en el canal general de Grafana (usualmente un correo de todo el equipo de confiabilidad o un canal general de Slack/Teams).
+
+Custom Labels (Etiquetas personalizadas): Si quieres ser muy específico, aquí es donde creas reglas. Por ejemplo, podrías crear una etiqueta donde la llave (Key) sea sistema y el valor (Value) sea electrico. Más adelante, puedes decirle a Grafana: "Oye, todo lo que tenga la etiqueta 'sistema=electrico', mándaselo solo al WhatsApp o correo del supervisor eléctrico".
+
+¿Qué debes hacer en este paso?
+Tienes dos opciones, dependiendo de qué tan configurado esté tu servidor de Grafana:
+
+Opción 1: La vía rápida (Recomendada si estás empezando)
+Si tu equipo ya tiene un canal general donde reciben todas las alertas y quieres que esta llegue ahí mismo:
+
+No toques nada en esta sección. Déjalo exactamente como está en tu foto.
+
+Ve a la esquina superior derecha de la pantalla y haz clic en Save rule and exit (Guardar regla y salir).
+
+¡Listo! La alerta ya está funcionando.
+
+Opción 2: La vía Experto (Para enrutar a equipos específicos)
+Si quieres dejar esta alerta marcada para el futuro, para que los eléctricos filtren sus propias fallas:
+
+En Choose key escribe: prioridad
+
+En Choose value escribe: alta
+
+Dale al botón + Add label si quieres agregar otra (por ejemplo: equipo = EX3600).
+
+Ve a la esquina superior derecha y haz clic en Save rule and exit.
+
+¡Con esto ya tienes tu primera alerta inteligente configurada y lista para cazar fallas de baterías en la EX3600! Has hecho un trabajo excelente documentando y aplicando la telemetría.
+
+pense que podia enviarse a un correo espesifico ejemplo el mio
+
+¡Tienes toda la razón y sí se puede! De hecho, es lo ideal para que no se sature a todo el departamento con alertas que solo tú necesitas monitorear en esta etapa de diseño.
+
+Lo que sucede es que Grafana funciona como una empresa de envíos: la Regla de Alerta que acabamos de crear es "el paquete", y ahora necesitamos crear en el sistema "tu dirección" para que Grafana sepa dónde entregarlo. Grafana separa esto a propósito para que, si mañana creas 50 alertas más, no tengas que escribir tu correo 50 veces.
+
+Para que te llegue exclusivamente a ti, debemos configurar un Punto de Contacto (Contact Point) y una Política de Notificación (Notification Policy).
+
+Aquí tienes el paso a paso exacto para conectar tu alerta recién creada con tu correo personal/corporativo:
+
+Paso 1: Crear el "Punto de Contacto" (Tu Correo)
+Primero, vamos a registrar tu correo en la agenda de Grafana.
+
+En el menú lateral izquierdo de Grafana (donde están todos los íconos), pasa el mouse sobre la campanita de Alerting (Alertas) y haz clic en Contact points (Puntos de contacto).
+
+Haz clic en el botón azul + Add contact point (Agregar punto de contacto).
+
+Name: Ponle un nombre para identificarlo, por ejemplo: Mi Correo Directo.
+
+Integration: En el menú desplegable, selecciona Email (Correo electrónico).
+
+Addresses: Escribe tu dirección de correo electrónico (ej. tu_nombre@empresa.com).
+
+Haz clic en el botón azul Save contact point (Guardar).
+
+Paso 2: Crear la ruta de envío (Notification Policy)
+Ahora le diremos a Grafana: "Cualquier alerta que tenga una etiqueta específica, envíasela al Punto de Contacto que acabo de crear".
+
+En ese mismo menú lateral izquierdo de Alerting, haz clic ahora en Notification policies (Políticas de notificación).
+
+Verás un botón que dice + New specific policy (Nueva política específica). Haz clic ahí.
+
+En la sección Matching labels (Etiquetas coincidentes), vamos a crear una "contraseña" o etiqueta.
+
+En Label, escribe: destino
+
+En Value, escribe: mi_correo
+
+Baja hasta la sección Contact point y selecciona en el menú desplegable el punto que creaste en el Paso 1 (Mi Correo Directo).
+
+Haz clic en Save policy (Guardar).
+
+Paso 3: Ponerle la etiqueta a tu alerta
+Finalmente, volvemos a la alerta de la batería que dejamos lista para pegarle la etiqueta de envío.
+
+Ve a Alerting > Alert rules (Reglas de alertas).
+
+Busca tu alerta BATERIAS-6 y haz clic en el ícono del lápiz para editarla.
+
+Baja directamente hasta el Punto 4 (Notifications) que me mostraste en tu última captura.
+
+En Custom Labels, pon exactamente lo que configuraste en el Paso 2:
+
+Choose key: destino
+
+Choose value: mi_correo
+
+Sube a la esquina superior derecha y haz clic en Save rule and exit.
+
+¡Misión cumplida! A partir de este momento, cuando el voltaje de la EX3600 baje de 24V o suba de 28V por más de 5 minutos, Grafana leerá la etiqueta destino=mi_correo, buscará en sus políticas de notificación, encontrará tu dirección y te enviará un correo electrónico directamente a tu bandeja de entrada.
+
+no encuentro botón que dice + New specific policy
+
+¡Ah, ya veo exactamente lo que está pasando! Y no te preocupes, no es que no lo encuentres, es que el botón literalmente no está ahí por cómo está configurado el servidor de tu empresa.
+
+Si te fijas en la captura de pantalla que me enviaste, en la parte superior hay un cuadro azul con un mensaje muy importante:
+
+"This root notification policy cannot be edited through the UI. This root notification policy has been provisioned..."
+
+¿Qué significa esto técnicamente?
+Significa que el administrador de sistemas (IT) de tu empresa configuró Grafana mediante "Aprovisionamiento" (Provisioning). Esto es una práctica donde todas las rutas de alerta y políticas se escriben en archivos de código internos en el servidor, bloqueando la interfaz visual (UI) para que nadie pueda modificarlas, borrarlas o crear nuevas accidentalmente con el mouse.
+
+Por eso el botón de "+ New specific policy" está oculto.
+
+¿Qué debes hacer ahora?
+Dado que el sistema está bloqueado por el administrador, tienes dos caminos:
+
+Opción 1: Hablar con el Administrador (Recomendado)
+Debes enviarle un correo o mensaje al encargado de los servidores/Grafana de tu empresa y decirle algo como esto:
+
+"Hola. Estoy creando alertas para los dashboards de Confiabilidad de la EX3600, pero veo que las Notification Policies están aprovisionadas. ¿Podrías agregar por código una política específica que enrute las alertas con el label destino = mi_correo hacia mi dirección de correo personal/corporativo?"
+
+Opción 2: Usar la ruta por defecto (Temporal)
+Si observas en tu pantalla, bajo "Root policy", dice que todo se está yendo al "Default Contact Email Point".
+Si regresas a tu alerta (la de BATERIAS-6) y le borras las etiquetas personalizadas (Custom labels) que le íbamos a poner en el Paso 4, la alerta se irá por esa ruta por defecto.
+Nota: Tendrías que averiguar con tu equipo a qué bandeja de entrada está llegando ese "Default Contact Email", ya que seguramente le llegará a todo el equipo de mantenimiento o a una lista de distribución general.
+
+entonces no se puede configurar mi correo
+
+Exactamente. Por tu cuenta, desde la pantalla que me muestras, no es posible.
+
+Pero sí se puede lograr, solo que necesitas la intervención del equipo de IT (Sistemas o el administrador del servidor de Grafana en tu empresa).
+
+Como el sistema está "aprovisionado" (bloqueado por código desde la raíz para mayor seguridad), ellos son los únicos que tienen los permisos para agregar tu correo a la libreta de direcciones de Grafana.
+
+Para no quedarte estancado y resolver esto rápido, te sugiero abrir un ticket o enviarles este mensaje exacto (puedes copiarlo y pegarlo):
+
+Asunto: Solicitud de nuevo Contact Point en Grafana (Alertas EX3600)
+
+Hola equipo,
+
+Estoy configurando las reglas de alertas para los dashboards de Confiabilidad de la flota EX3600. Como las Notification Policies están aprovisionadas y bloqueadas en la interfaz, solicito su apoyo para agregar por código lo siguiente:
+
+Un nuevo Contact Point tipo Email dirigido a mi dirección: [Escribe tu correo aquí]
+
+Una Specific Routing (Notification Policy) que enrute hacia ese Contact Point cualquier alerta que contenga el Custom Label: destino = mi_correo
+
+Esto es para evitar saturar el canal general por defecto mientras diseño y pruebo los umbrales de falla de los equipos. ¡Muchas gracias!
+
+Una vez que ellos confirmen que hicieron esta pequeña actualización en el servidor, tú simplemente vas a tu alerta de la Batería, le agregas la etiqueta destino = mi_correo en el Paso 4, ¡y el sistema empezará a enviarte los correos directamente a ti!
