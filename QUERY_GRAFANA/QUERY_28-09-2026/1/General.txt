@@ -1,0 +1,33 @@
+General
+Name
+BATT & RPM
+Description
+Tags
+New tag (enter key to add)
+
+Add
+Folder
+Ex3600
+Editable
+Set to read-only to disable all editing. Reload the dashboard for changes to take effect
+
+
+
+Time options
+Time zone
+Default
+Week start
+Default
+Auto refresh
+Define the auto refresh intervals that should be available in the auto refresh list.
+5s,10s,30s,1m,5m,15m,30m,1h,2h,1d
+Now delay
+Exclude recent data that may be incomplete.
+0m
+Hide time picker
+
+Refresh live dashboards
+Continuously re-draw panels where the time range references 'now'
+
+
+Panel options
